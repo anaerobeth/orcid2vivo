@@ -38,6 +38,9 @@ def crosswalk_works(orcid_profile, person_uri, graph):
 
         work_uri = ns.D[to_hash_identifier(PREFIX_DOCUMENT, (title, work_type))]
 
+        #Work URL
+        work_url = _get_orcid_url(work)
+
         #Publication date
         (publication_year, publication_month, publication_day) = _get_crossref_publication_date(crossref_record) \
             or _get_publication_date(work)
@@ -72,6 +75,8 @@ def crosswalk_works(orcid_profile, person_uri, graph):
         ##Add triples
         #Title
         graph.add((work_uri, RDFS.label, Literal(title)))
+        #URL
+        graph.add((work_uri, VIVO.url, Literal(work_url)))
         #Person (via Authorship)
         authorship_uri = work_uri + "-auth"
         graph.add((authorship_uri, RDF.type, VIVO.Authorship))
@@ -200,6 +205,9 @@ def _get_crossref_title(crossref_record):
 def _get_orcid_title(work):
     return join_if_not_empty((work["work-title"]["title"]["value"],
                                    (work["work-title"].get("subtitle") or {}).get("value")), ": ")
+
+def _get_orcid_url(work):
+    return str(work["url"].values()[0]) if work["url"] else None
 
 def _get_publication_date(work):
     year = None
