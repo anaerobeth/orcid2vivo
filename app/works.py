@@ -48,6 +48,7 @@ def crosswalk_works(orcid_profile, person_uri, graph):
         #Authors (an array of (first_name, surname))
         authors = _get_crossref_authors(crossref_record)
         #TODO: Get from bibtext and ORCID profile as alternates. See #5.
+        alternate_authors = _get_orcid_authors(work)
 
         #Publisher
         publisher = bibtex.get("publisher")
@@ -91,6 +92,15 @@ def crosswalk_works(orcid_profile, person_uri, graph):
                     graph.add((authorship_uri, RDF.type, VIVO.Authorship))
                     graph.add((authorship_uri, VIVO.relates, work_uri))
                     graph.add((authorship_uri, VIVO.relates, author_uri))
+        if alternate_authors:
+            first_name, surname = alternate_authors.split()
+            author_uri = ns.D[to_hash_identifier(PREFIX_PERSON, (first_name, surname))] 
+            authorship_uri = author_uri + "-auth"
+            graph.add((authorship_uri, RDF.type, VIVO.Authorship))
+            graph.add((authorship_uri, VIVO.relates, work_uri))
+            graph.add((authorship_uri, VIVO.relates, author_uri))
+            graph.add((authorship_uri, RDFS.label, author_uri))
+
 
         #Date
         date_uri = work_uri + "-date"
@@ -236,6 +246,11 @@ def _get_crossref_authors(doi_record):
         authors.append((author["given"], author["family"]))
     return authors
 
+
+def _get_orcid_authors(work):
+    contributors = work["work-contributors"]
+    if re.match(r'.*AUTHOR.*', str(contributors)):
+        return (contributors["contributor"][0]["credit-name"]["value"])
 
 def bibtex_convert_to_unicode(record):
     for val in record:
